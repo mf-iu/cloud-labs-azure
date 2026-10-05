@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Create an Azure VM that installs and runs PlaceFinder via cloud-init.
+# Usage: ./create-vm.sh [git ref]   (default ref: t01)
+source "$(dirname "$0")/../lib/common.sh"
+source "$(dirname "$0")/../lib/provider.sh"
+
+LAB=t02
+ref="${1:-t01}"
+size="${VM_SIZE:-Standard_B1s}"
+check_login
+rg=$(rg_name "$LAB")
+[[ "$(az group exists -n "$rg")" == "false" ]] || die "$rg exists already. Run ./destroy-vm.sh first."
+[[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create one: ssh-keygen -t ed25519"
+
+ip=$(my_ip)
+ensure_rg "$LAB"
+
+log "Creating network security group (SSH and port 8000 from $ip only) ..."
+az network nsg create -g "$rg" -n nsg-vm -o none
+az network nsg rule create -g "$rg" --nsg-name nsg-vm -n allow-ssh-api-from-my-ip \
+  --priority 100 --direction Inbound --access Allow --protocol Tcp \
+  --source-address-prefixes "$ip/32" --destination-port-ranges 22 8000 -o none
+
+user_data=$(mktemp)
+trap 'rm -f "$user_data"' EXIT
+render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
+
+# 64 GB Premium SSD (P6) is part of the free services of a new account
+log "Creating VM $size with Ubuntu 24.04 (takes 1-2 minutes) ..."
+public_ip=$(az vm create -g "$rg" -n "$(name "$LAB-vm")" \
+  --image Ubuntu2404 --size "$size" \
+  --admin-username azureuser --ssh-key-values "$SSH_PUBLIC_KEY" \
+  --custom-data "$user_data" \
+  --nsg nsg-vm --public-ip-sku Standard \
+  --os-disk-size-gb 64 --storage-sku Premium_LRS \
+  --tags "course=$COURSE_TAG" "lab=$LAB" \
+  --query publicIpAddress -o tsv)
+save_state "$LAB" PUBLIC_IP "$public_ip"
+
+cat <<INFO
+
+VM is running.
+  SSH:          ssh azureuser@$public_ip
+  cloud-init:   ssh azureuser@$public_ip cloud-init status --wait
+  API:          http://$public_ip:8000/places?q=Erfurt
+  Delete:       ./destroy-vm.sh
+INFO
+wait_for_http "http://$public_ip:8000/health" 600 || warn "Check the log on the VM: journalctl -u placefinder"

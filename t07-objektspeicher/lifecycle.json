@@ -1,0 +1,18 @@
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "expire-raw-data",
+      "type": "Lifecycle",
+      "definition": {
+        "actions": {
+          "baseBlob": {"delete": {"daysAfterModificationGreaterThan": 30}}
+        },
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["data/raw/"]
+        }
+      }
+    }
+  ]
+}

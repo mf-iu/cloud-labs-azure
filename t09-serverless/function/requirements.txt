@@ -1,0 +1,4 @@
+azure-functions
+azure-identity
+azure-storage-blob
+pg8000>=1.31
