@@ -63,7 +63,7 @@ if $with_nat; then
 fi
 
 if $with_vm; then
-  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found."
+  [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
   rule nsg-public allow-ssh-from-my-ip 110 Allow "$(my_ip)/32" 22
   public_ip=$(az vm create -g "$rg" -n "$(name "$LAB-vm")" --image Ubuntu2404 \
     --size Standard_B1s --admin-username azureuser --ssh-key-values "$SSH_PUBLIC_KEY" \
