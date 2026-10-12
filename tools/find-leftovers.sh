@@ -17,6 +17,9 @@ az group list --query '[].{group:name, location:location}' -o table
 
 section "Costly resources in the subscription"
 az vm list -d --query '[].{vm:name, group:resourceGroup, size:hardwareProfile.vmSize, state:powerState}' -o table
+# disks without a VM (diskState Unattached) and snapshots cost storage
+az disk list --query '[].{disk:name, group:resourceGroup, sizeGb:diskSizeGB, state:diskState}' -o table
+az snapshot list --query '[].{snapshot:name, group:resourceGroup, sizeGb:diskSizeGB}' -o table
 az network nat gateway list --query '[].{natGateway:name, group:resourceGroup}' -o table
 az network public-ip list --query '[].{publicIp:name, group:resourceGroup, ip:ipAddress}' -o table
 az postgres flexible-server list --query '[].{server:name, group:resourceGroup, state:state}' -o table
