@@ -9,6 +9,7 @@ ref="${1:-t01}"
 size="${VM_SIZE:-Standard_B1s}"
 check_login
 check_repo_ref "$PLACEFINDER_REPO" "$ref"
+check_vm_size "$size"
 rg=$(rg_name "$LAB")
 [[ "$(az group exists -n "$rg")" == "false" ]] || die "$rg exists already. Run ./destroy-vm.sh first."
 [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
@@ -35,7 +36,8 @@ public_ip=$(az vm create -g "$rg" -n "$(name "$LAB-vm")" \
   --nsg nsg-vm --public-ip-sku Standard \
   --os-disk-size-gb 64 --storage-sku Premium_LRS \
   --tags "course=$COURSE_TAG" "lab=$LAB" \
-  --query publicIpAddress -o tsv)
+  --query publicIpAddress -o tsv) ||
+  die "VM creation failed. On SkuNotAvailable set another VM_SIZE in config.env (e.g. Standard_B2ats_v2) or another AZURE_LOCATION, then run ./destroy-vm.sh and ./create-vm.sh again."
 save_state "$LAB" PUBLIC_IP "$public_ip"
 
 cat <<INFO

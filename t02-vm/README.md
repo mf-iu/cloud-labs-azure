@@ -23,7 +23,20 @@ Das Skript
 3. erstellt die VM mit Ubuntu 24.04 und `cloud-init.yaml` als Custom Data; `az vm create` legt dabei Virtual Network, Subnetz, Netzwerkkarte und öffentliche IP-Adresse automatisch an,
 4. wartet, bis die API antwortet (erster Start ca. 3–5 Minuten).
 
-Ist `Standard_B1s` in der Region gerade nicht verfügbar, hilft eine andere Region in `config.env` oder eine andere Größe: `VM_SIZE=Standard_B2ats_v2 ./create-vm.sh` (ebenfalls in den kostenlosen Diensten enthalten).
+Die VM-Größe steht in `config.env` (`VM_SIZE`, Standard `Standard_B1s`). Das Skript prüft vorab, ob die Größe in der Region für die Subscription freigegeben ist. Kurzfristige Kapazitätsengpässe zeigt Azure aber erst beim Anlegen der VM mit dem Fehler `SkuNotAvailable` („Capacity Restrictions“). Dann hilft eine andere Größe oder Region:
+
+```bash
+./destroy-vm.sh                                   # halb angelegte Ressourcengruppe löschen
+# in config.env: VM_SIZE=Standard_B2ats_v2       (ebenfalls in den kostenlosen Diensten)
+./create-vm.sh
+```
+
+Welche B-Größen in der Region ohne Einschränkung verfügbar sind, zeigt:
+
+```bash
+az vm list-skus -l <region> --size Standard_B --resource-type virtualMachines \
+  --query "[?length(restrictions)==\`0\`].name" -o tsv
+```
 
 ## Prüfen
 

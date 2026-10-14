@@ -41,6 +41,27 @@ check_location() {
   fi
 }
 
+# Fail early if the VM size cannot be used in AZURE_LOCATION. Short-term
+# capacity limits only show up when the VM is created.
+check_vm_size() {   # check_vm_size <size>
+  local size=$1 status
+  log "Checking VM size $size in $AZURE_LOCATION ..."
+  status=$(az vm list-skus -l "$AZURE_LOCATION" --size "$size" \
+      --resource-type virtualMachines -o json |
+    python3 -c '
+import json, sys
+size = sys.argv[1].lower()
+skus = [s for s in json.load(sys.stdin) if s["name"].lower() == size]
+if not skus:
+    print("not offered")
+else:
+    print(", ".join(r.get("reasonCode", "restricted")
+                    for r in skus[0].get("restrictions") or []
+                    if r.get("type") == "Location"))
+' "$size")
+  [[ -z "$status" ]] || die "VM size $size cannot be used in $AZURE_LOCATION ($status). Set another VM_SIZE in config.env (e.g. Standard_B2ats_v2) or another AZURE_LOCATION."
+}
+
 ensure_rg() {   # ensure_rg <lab>
   check_location
   az group create -n "$(rg_name "$1")" -l "$AZURE_LOCATION" \
