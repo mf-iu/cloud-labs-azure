@@ -47,6 +47,8 @@ az login --use-device-code
 
 `az login --use-device-code` zeigt einen Code und eine URL; die Anmeldung erfolgt im Browser auf dem Notebook. Bei mehreren Abonnements das gewünschte in `config.env` (`AZURE_SUBSCRIPTION`) eintragen.
 
+**Erlaubte Regionen:** Manche Abonnements, vor allem *Azure for Students*, dürfen Ressourcen nur in wenigen, von Microsoft festgelegten Regionen anlegen (Richtlinie *Allowed resource deployment regions*). Andere Regionen lehnt Azure mit `RequestDisallowedByAzure` ab. `./check-cli.sh` zeigt die erlaubten Regionen an und warnt, wenn `AZURE_LOCATION` in `config.env` nicht dazugehört; dann eine der angezeigten Regionen eintragen, möglichst eine in Europa. Ändern lässt sich die Liste nur über den Azure-Support oder durch eine Umstellung auf Pay-as-you-go.
+
 Azure-Dienste gehören zu **Ressourcenanbietern** (z. B. `Microsoft.App` für Container Apps). Ein neues Abonnement muss jeden Anbieter einmal registrieren; das Skript erledigt das für alle Dienste des Kurses.
 
 ### SSH-Schlüssel für die VMs

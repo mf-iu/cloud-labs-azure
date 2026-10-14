@@ -16,7 +16,33 @@ subscription_id() { az account show --query id -o tsv; }
 
 # One resource group per lab: deleting the group deletes everything in it
 rg_name() { echo "rg-$(name "$1")"; }
+# Regions this subscription may deploy to. Azure for Students and some new
+# subscriptions get a policy such as "Allowed resource deployment regions"
+# from Microsoft; prints nothing if there is no such restriction.
+allowed_locations() {
+  az policy assignment list -o json 2>/dev/null | python3 -c '
+import json, sys
+found = set()
+for a in json.load(sys.stdin):
+    title = (a.get("displayName") or a.get("name") or "").lower()
+    if "region" in title or "location" in title:
+        for p in (a.get("parameters") or {}).values():
+            if isinstance(p, dict) and isinstance(p.get("value"), list):
+                found.update(str(v).lower() for v in p["value"])
+print(" ".join(sorted(found)))' || true
+}
+
+# Stop early with a clear message if AZURE_LOCATION is not allowed
+check_location() {
+  local allowed
+  allowed=$(allowed_locations)
+  if [[ -n "$allowed" && " $allowed " != *" ${AZURE_LOCATION,,} "* ]]; then
+    die "AZURE_LOCATION=$AZURE_LOCATION is not allowed for this subscription. Allowed regions: $allowed. Set one of them in config.env."
+  fi
+}
+
 ensure_rg() {   # ensure_rg <lab>
+  check_location
   az group create -n "$(rg_name "$1")" -l "$AZURE_LOCATION" \
     --tags "course=$COURSE_TAG" "lab=$1" -o none
 }
