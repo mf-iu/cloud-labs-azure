@@ -15,24 +15,24 @@ ensure_rg "$LAB"
 
 env_name=$(name env)
 app_name=$(name placefinder)
-if ! az containerapp env show -g "$rg" -n "$env_name" -o none 2>/dev/null; then
+if ! az containerapp env show --resource-group "$rg" --name "$env_name" --output none 2>/dev/null; then
   log "Creating Container Apps environment $env_name (without Log Analytics) ..."
-  az containerapp env create -g "$rg" -n "$env_name" -l "$AZURE_LOCATION" \
-    --logs-destination none --tags "course=$COURSE_TAG" "lab=$LAB" -o none
+  az containerapp env create --resource-group "$rg" --name "$env_name" --location "$AZURE_LOCATION" \
+    --logs-destination none --tags "course=$COURSE_TAG" "lab=$LAB" --output none
 fi
 
 log "Creating container app $app_name with $image ..."
-fqdn=$(az containerapp create -g "$rg" -n "$app_name" --environment "$env_name" \
+fqdn=$(az containerapp create --resource-group "$rg" --name "$app_name" --environment "$env_name" \
   --image "$image" --target-port 8000 --ingress external \
   --cpu 0.25 --memory 0.5Gi --min-replicas 0 --max-replicas 2 \
   --tags "course=$COURSE_TAG" "lab=$LAB" \
-  --query properties.configuration.ingress.fqdn -o tsv)
+  --query properties.configuration.ingress.fqdn --output tsv)
 save_state "$LAB" SERVICE_URL "https://$fqdn"
 
 cat <<INFO
 
 URL:     https://$fqdn
 The app scales to zero when idle; the first request then takes a few seconds.
-Logs:    az containerapp logs show -g $rg -n $app_name --follow
+Logs:    az containerapp logs show --resource-group $rg --name $app_name --follow
 INFO
 wait_for_http "https://$fqdn/health" 300

@@ -16,21 +16,21 @@ ensure_rg "$LAB"
 # API Management names are global (<name>.azure-api.net)
 apim=$(name "$(suffix)-apim")
 log "Creating API Management $apim, tier Consumption (a few minutes) ..."
-az apim create -g "$rg" -n "$apim" -l "$AZURE_LOCATION" --sku-name Consumption \
+az apim create --resource-group "$rg" --name "$apim" --location "$AZURE_LOCATION" --sku-name Consumption \
   --publisher-email "$ALERT_EMAIL" --publisher-name "PlaceFinder $OWNER" \
-  --tags "course=$COURSE_TAG" "lab=$LAB" -o none
+  --tags "course=$COURSE_TAG" "lab=$LAB" --output none
 save_state "$LAB" APIM_NAME "$apim"
 
-az apim api create -g "$rg" --service-name "$apim" --api-id placefinder \
+az apim api create --resource-group "$rg" --service-name "$apim" --api-id placefinder \
   --display-name PlaceFinder --path placefinder --protocols https \
-  --service-url "$SERVICE_URL" --subscription-required false -o none
+  --service-url "$SERVICE_URL" --subscription-required false --output none
 for method in GET POST PUT DELETE; do
-  az apim api operation create -g "$rg" --service-name "$apim" --api-id placefinder \
+  az apim api operation create --resource-group "$rg" --service-name "$apim" --api-id placefinder \
     --operation-id "all-$(tr '[:upper:]' '[:lower:]' <<<"$method")" \
-    --display-name "$method all" --method "$method" --url-template "/*" -o none
+    --display-name "$method all" --method "$method" --url-template "/*" --output none
 done
 
-gateway=$(az apim show -g "$rg" -n "$apim" --query gatewayUrl -o tsv)
+gateway=$(az apim show --resource-group "$rg" --name "$apim" --query gatewayUrl --output tsv)
 save_state "$LAB" API_URL "$gateway/placefinder"
 cat <<INFO
 

@@ -11,17 +11,17 @@ rg=$(rg_name tfstate)
 account=$(storage_name tfstate)
 ensure_rg tfstate
 
-if ! az storage account show -g "$rg" -n "$account" -o none 2>/dev/null; then
+if ! az storage account show --resource-group "$rg" --name "$account" --output none 2>/dev/null; then
   log "Creating storage account $account for the state ..."
-  az storage account create -g "$rg" -n "$account" -l "$AZURE_LOCATION" \
+  az storage account create --resource-group "$rg" --name "$account" --location "$AZURE_LOCATION" \
     --sku Standard_LRS --kind StorageV2 --min-tls-version TLS1_2 \
     --allow-blob-public-access false \
-    --tags "course=$COURSE_TAG" "lab=t08" -o none
+    --tags "course=$COURSE_TAG" "lab=t08" --output none
   # Versioning keeps older states, e.g. after a failed apply
-  az storage account blob-service-properties update -g "$rg" --account-name "$account" \
-    --enable-versioning true -o none
-  az storage container create --account-name "$account" -n tfstate --auth-mode key \
-    --account-key "$(az storage account keys list -g "$rg" -n "$account" --query '[0].value' -o tsv)" -o none
+  az storage account blob-service-properties update --resource-group "$rg" --account-name "$account" \
+    --enable-versioning true --output none
+  az storage container create --account-name "$account" --name tfstate --auth-mode key \
+    --account-key "$(az storage account keys list --resource-group "$rg" --name "$account" --query '[0].value' --output tsv)" --output none
 fi
 
 # Locking uses blob leases; OpenTofu reads the access key with your login

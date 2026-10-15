@@ -15,7 +15,7 @@
 | `deploy.sh` | `tofu apply` und Veröffentlichung des Codes mit `func azure functionapp publish` |
 | `invoke.sh` | HTTP-Trigger mit Function Key aufrufen |
 
-Flex Consumption ist nicht in jeder Region verfügbar. Prüfen mit `az functionapp list-flexconsumption-locations -o table`; notfalls `AZURE_LOCATION` in `config.env` ändern (z. B. `swedencentral`).
+Flex Consumption ist nicht in jeder Region verfügbar. Prüfen mit `az functionapp list-flexconsumption-locations --output table`; notfalls `AZURE_LOCATION` in `config.env` ändern (z. B. `swedencentral`).
 
 ## Lokal testen
 
@@ -24,7 +24,7 @@ cd function
 python3 geonames_sync.py --date 2026-10-01 --out ../out
 ```
 
-Ohne Cloud: Die Dateien landen unter `out/geonames/changes/<datum>/`. Die ganze Function läuft lokal mit den Core Tools: Azurite als Speicher-Emulator starten (`azurite --silent &`), `local.settings.example.json` nach `local.settings.json` kopieren, `DATA_ACCOUNT_URL` aus `tofu output` eintragen, dann `func start` und `curl -X POST "http://localhost:7071/api/sync?date=2026-10-01"`. Geschrieben wird dabei mit dem eigenen `az login` in das echte Speicherkonto.
+Ohne Cloud: Die Dateien landen unter `out/geonames/changes/<datum>/`. Die ganze Function läuft lokal mit den Core Tools: Azurite als Speicher-Emulator starten (`azurite --silent &`), `local.settings.example.json` nach `local.settings.json` kopieren, `DATA_ACCOUNT_URL` aus `tofu output` eintragen, dann `func start` und `curl --request POST "http://localhost:7071/api/sync?date=2026-10-01"`. Geschrieben wird dabei mit dem eigenen `az login` in das echte Speicherkonto.
 
 ## Ausrollen
 

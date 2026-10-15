@@ -7,10 +7,10 @@
 ## Schritte
 
 ```bash
-./create-db.sh        # Server mit Firewall-Regel für die eigene IP, ca. 5-10 min
-./load-cities.sh      # cities15000 laden, Tabelle und Indizes anlegen
-./query.sh            # Beispielabfragen aus queries.sql
-./query.sh -i         # interaktive psql-Sitzung
+./create-db.sh            # Server mit Firewall-Regel für die eigene IP, ca. 5-10 min
+./load-cities.sh          # cities15000 laden, Tabelle und Indizes anlegen
+./query.sh                # Beispielabfragen aus queries.sql
+./query.sh --interactive  # interaktive psql-Sitzung
 ```
 
 `create-db.sh` erzeugt ein zufälliges Passwort und speichert die Verbindungszeichenkette in `../.state/t06.env` (nicht eingecheckt). Der Server ist öffentlich erreichbar, die Firewall lässt aber nur die eigene IP-Adresse zu, und die Verbindung ist mit TLS verschlüsselt (`sslmode=require`).
@@ -36,8 +36,8 @@ services:
     # from PostgreSQL 18 on, the volume belongs at /var/lib/postgresql
     volumes: [pgdata:/var/lib/postgresql]
     healthcheck:
-      # -h 127.0.0.1: check via TCP, the init server only listens on the socket
-      test: pg_isready -h 127.0.0.1 -U pf
+      # --host 127.0.0.1: check via TCP, the init server only listens on the socket
+      test: pg_isready --host 127.0.0.1 --username pf
       interval: 5s
 
 volumes:
@@ -46,9 +46,9 @@ volumes:
 ```
 
 ```bash
-(cd /workspaces/placefinder && docker compose up -d db)   # db: healthy in docker compose ps
+(cd /workspaces/placefinder && docker compose up --detach db)   # db: healthy in docker compose ps
 export DATABASE_URL=postgresql://pf:pf@localhost:5432/pf
-export PGOPTIONS="-c jit=off -c max_parallel_workers_per_gather=0"   # einfache Pläne
+export PGOPTIONS="--jit=off --max_parallel_workers_per_gather=0"   # einfache Pläne
 ./load-cities.sh
 ./query.sh
 ```
@@ -78,7 +78,7 @@ Im Portal: *Monitoring* → *Metrics*, *Settings* → *Backup and restore* (auto
 
 ```bash
 ./load-pois.sh                                     # Thüringen
-./load-pois.sh europe/germany/sachsen             # anderer Auszug
+./load-pois.sh europe/germany/sachsen              # anderer Auszug
 ```
 
 Für spätere Updates mit `osm2pgsql-replication` muss der Import mit `--slim` laufen. Daten © OpenStreetMap contributors, ODbL.

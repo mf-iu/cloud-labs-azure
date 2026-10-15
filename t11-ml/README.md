@@ -16,7 +16,7 @@ MLflow lokal mit Artefakten im Blob Storage:
 
 ```bash
 account=$(tools/tofu.sh t11-ml/infra output -raw storage_account)
-export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n "$account" -o tsv)
+export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string --name "$account" --output tsv)
 uvx --with azure-storage-blob --with azure-identity mlflow server \
   --backend-store-uri sqlite:///.state/mlflow.db \
   --artifacts-destination "$(tools/tofu.sh t11-ml/infra output -raw mlflow_artifacts_destination)" \

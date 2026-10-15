@@ -9,12 +9,12 @@ check_login
 tag="${1:-t05}"
 rg=$(rg_name t03)
 app=$(name placefinder)
-az containerapp show -g "$rg" -n "$app" -o none 2>/dev/null \
+az containerapp show --resource-group "$rg" --name "$app" --output none 2>/dev/null \
   || die "No container app from t03. Run ../t03-container/deploy.sh first."
 
 log "Updating $app to $PLACEFINDER_IMAGE:$tag ..."
-az containerapp update -g "$rg" -n "$app" --image "$PLACEFINDER_IMAGE:$tag" -o none
-az containerapp revision list -g "$rg" -n "$app" \
-  --query '[].{revision:name, active:properties.active, traffic:properties.trafficWeight, created:properties.createdTime}' -o table
+az containerapp update --resource-group "$rg" --name "$app" --image "$PLACEFINDER_IMAGE:$tag" --output none
+az containerapp revision list --resource-group "$rg" --name "$app" \
+  --query '[].{revision:name, active:properties.active, traffic:properties.trafficWeight, created:properties.createdTime}' --output table
 load_state t03
 log "Test it with: ./smoke-test.sh $SERVICE_URL"

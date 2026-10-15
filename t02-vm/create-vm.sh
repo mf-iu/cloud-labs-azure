@@ -11,32 +11,32 @@ check_login
 check_repo_ref "$PLACEFINDER_REPO" "$ref"
 check_vm_size "$size"
 rg=$(rg_name "$LAB")
-[[ "$(az group exists -n "$rg")" == "false" ]] || die "$rg exists already. Run ./destroy-vm.sh first."
+[[ "$(az group exists --name "$rg")" == "false" ]] || die "$rg exists already. Run ./destroy-vm.sh first."
 [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
 
 ip=$(my_ip)
 ensure_rg "$LAB"
 
 log "Creating network security group (SSH and port 8000 from $ip only) ..."
-az network nsg create -g "$rg" -n nsg-vm -o none
-az network nsg rule create -g "$rg" --nsg-name nsg-vm -n allow-ssh-api-from-my-ip \
+az network nsg create --resource-group "$rg" --name nsg-vm --output none
+az network nsg rule create --resource-group "$rg" --nsg-name nsg-vm --name allow-ssh-api-from-my-ip \
   --priority 100 --direction Inbound --access Allow --protocol Tcp \
-  --source-address-prefixes "$ip/32" --destination-port-ranges 22 8000 -o none
+  --source-address-prefixes "$ip/32" --destination-port-ranges 22 8000 --output none
 
 user_data=$(mktemp)
-trap 'rm -f "$user_data"' EXIT
+trap 'rm --force "$user_data"' EXIT
 render "$(dirname "$0")/cloud-init.yaml" "REPO=$PLACEFINDER_REPO" "REF=$ref" >"$user_data"
 
 # 64 GB Premium SSD (P6) is part of the free services of a new account
 log "Creating VM $size with Ubuntu 24.04 (takes 1-2 minutes) ..."
-public_ip=$(az vm create -g "$rg" -n "$(name "$LAB-vm")" \
+public_ip=$(az vm create --resource-group "$rg" --name "$(name "$LAB-vm")" \
   --image Ubuntu2404 --size "$size" \
   --admin-username azureuser --ssh-key-values "$SSH_PUBLIC_KEY" \
   --custom-data "$user_data" \
   --nsg nsg-vm --public-ip-sku Standard \
   --os-disk-size-gb 64 --storage-sku Premium_LRS \
   --tags "course=$COURSE_TAG" "lab=$LAB" \
-  --query publicIpAddress -o tsv) ||
+  --query publicIpAddress --output tsv) ||
   die "VM creation failed. On SkuNotAvailable set another VM_SIZE in config.env (e.g. Standard_B2ats_v2) or another AZURE_LOCATION, then run ./destroy-vm.sh and ./create-vm.sh again."
 save_state "$LAB" PUBLIC_IP "$public_ip"
 
@@ -48,4 +48,4 @@ VM is running.
   API:          http://$public_ip:8000/places?q=Erfurt
   Delete:       ./destroy-vm.sh
 INFO
-wait_for_http "http://$public_ip:8000/health" 600 || warn "Check the log on the VM: journalctl -u placefinder"
+wait_for_http "http://$public_ip:8000/health" 600 || warn "Check the log on the VM: journalctl --unit placefinder"

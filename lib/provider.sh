@@ -5,14 +5,14 @@ require az
 export AZURE_CORE_ONLY_SHOW_ERRORS=true   # no preview warnings in the output
 
 check_login() {
-  az account show -o none 2>/dev/null \
+  az account show --output none 2>/dev/null \
     || die "Not logged in to Azure. Run: az login --use-device-code"
   if [[ -n "${AZURE_SUBSCRIPTION:-}" ]]; then
     az account set --subscription "$AZURE_SUBSCRIPTION"
   fi
 }
 
-subscription_id() { az account show --query id -o tsv; }
+subscription_id() { az account show --query id --output tsv; }
 
 # One resource group per lab: deleting the group deletes everything in it
 rg_name() { echo "rg-$(name "$1")"; }
@@ -20,7 +20,7 @@ rg_name() { echo "rg-$(name "$1")"; }
 # subscriptions get a policy such as "Allowed resource deployment regions"
 # from Microsoft; prints nothing if there is no such restriction.
 allowed_locations() {
-  az policy assignment list -o json 2>/dev/null | python3 -c '
+  az policy assignment list --output json 2>/dev/null | python3 -c '
 import json, sys
 found = set()
 for a in json.load(sys.stdin):
@@ -46,8 +46,8 @@ check_location() {
 check_vm_size() {   # check_vm_size <size>
   local size=$1 status
   log "Checking VM size $size in $AZURE_LOCATION ..."
-  status=$(az vm list-skus -l "$AZURE_LOCATION" --size "$size" \
-      --resource-type virtualMachines -o json |
+  status=$(az vm list-skus --location "$AZURE_LOCATION" --size "$size" \
+      --resource-type virtualMachines --output json |
     python3 -c '
 import json, sys
 size = sys.argv[1].lower()
@@ -64,31 +64,31 @@ else:
 
 ensure_rg() {   # ensure_rg <lab>
   check_location
-  az group create -n "$(rg_name "$1")" -l "$AZURE_LOCATION" \
-    --tags "course=$COURSE_TAG" "lab=$1" -o none
+  az group create --name "$(rg_name "$1")" --location "$AZURE_LOCATION" \
+    --tags "course=$COURSE_TAG" "lab=$1" --output none
 }
 delete_rg() {   # delete_rg <lab>
   local rg
   rg=$(rg_name "$1")
-  if [[ "$(az group exists -n "$rg")" == "true" ]]; then
+  if [[ "$(az group exists --name "$rg")" == "true" ]]; then
     log "Deleting resource group $rg with all resources (takes a few minutes) ..."
-    az group delete -n "$rg" --yes
+    az group delete --name "$rg" --yes
   else
     log "Resource group $rg does not exist."
   fi
 }
 
 # Storage account names: 3-24 lowercase letters and digits, globally unique
-storage_name() { echo "${PREFIX}${OWNER}$(suffix)$1" | tr -cd 'a-z0-9' | cut -c1-24; }
+storage_name() { echo "${PREFIX}${OWNER}$(suffix)$1" | tr --complement --delete 'a-z0-9' | cut --characters 1-24; }
 
 # Resource providers must be registered once per subscription
 ensure_providers() {
   local ns state
   for ns in "$@"; do
-    state=$(az provider show -n "$ns" --query registrationState -o tsv 2>/dev/null || echo NotRegistered)
+    state=$(az provider show --name "$ns" --query registrationState --output tsv 2>/dev/null || echo NotRegistered)
     if [[ "$state" != "Registered" ]]; then
       log "Registering resource provider $ns ..."
-      az provider register -n "$ns" --wait
+      az provider register --name "$ns" --wait
     fi
   done
 }

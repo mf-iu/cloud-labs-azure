@@ -33,7 +33,7 @@ jobs:
       - name: Build and push the image
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA::12}"
-          docker build -t "$image" .
+          docker build --tag "$image" .
           docker push "$image"
           echo "IMAGE=$image" >> "$GITHUB_ENV"
 
@@ -46,5 +46,5 @@ jobs:
 
       - name: Roll out the new image
         run: |
-          az containerapp update -g "${{ vars.RESOURCE_GROUP }}" \
-            -n "${{ vars.CONTAINER_APP }}" --image "$IMAGE"
+          az containerapp update --resource-group "${{ vars.RESOURCE_GROUP }}" \
+            --name "${{ vars.CONTAINER_APP }}" --image "$IMAGE"

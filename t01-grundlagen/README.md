@@ -36,14 +36,14 @@ Für die tägliche Arbeit genügt bei Azure das eigene Konto mit MFA. In Unterne
 Im Terminal des Dev Containers (siehe [README](../README.md#arbeitsumgebung-dev-container)):
 
 ```bash
-cd /workspaces/cloud-labs-azure/t01-grundlagen   # Ordner dieser Übung
-cp -i ../config.example.env ../config.env        # OWNER, ALERT_EMAIL usw. eintragen
+cd /workspaces/cloud-labs-azure/t01-grundlagen        # Ordner dieser Übung
+cp --interactive ../config.example.env ../config.env  # OWNER, ALERT_EMAIL usw. eintragen
 az login --use-device-code
 ./check-cli.sh
-./register-providers.sh                          # einmalig, dauert einige Minuten
+./register-providers.sh                               # einmalig, dauert einige Minuten
 ```
 
-`cp -i` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
+`cp --interactive` fragt nach, falls `config.env` schon existiert (z. B. aus der Einrichtung im [README](../README.md#einrichtung)); dann mit `n` antworten und die vorhandene Datei behalten.
 
 `az login --use-device-code` zeigt einen Code und eine URL; die Anmeldung erfolgt im Browser auf dem Notebook. Bei mehreren Abonnements das gewünschte in `config.env` (`AZURE_SUBSCRIPTION`) eintragen.
 

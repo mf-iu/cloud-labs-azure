@@ -8,8 +8,8 @@ check_login
 tofu_out() { "$REPO_ROOT/tools/tofu.sh" "$REPO_ROOT/t09-serverless/infra" output -raw "$1"; }
 app=$(tofu_out function_app_name)
 rg=$(tofu_out resource_group)
-host=$(az functionapp show -g "$rg" -n "$app" --query defaultHostName -o tsv)
-key=$(az functionapp keys list -g "$rg" -n "$app" --query functionKeys.default -o tsv)
+host=$(az functionapp show --resource-group "$rg" --name "$app" --query defaultHostName --output tsv)
+key=$(az functionapp keys list --resource-group "$rg" --name "$app" --query functionKeys.default --output tsv)
 
-curl -fsS -X POST "https://$host/api/sync?date=${1:-}&code=$key"
+curl --fail --silent --show-error --request POST "https://$host/api/sync?date=${1:-}&code=$key"
 echo

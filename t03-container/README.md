@@ -18,11 +18,11 @@ Das Skript registriert bei Bedarf die Anbieter `Microsoft.App` und `Microsoft.Op
 ## Prüfen
 
 ```bash
-url=$(grep SERVICE_URL ../.state/t03.env | cut -d= -f2)
+url=$(grep SERVICE_URL ../.state/t03.env | cut --delimiter = --fields 2)
 curl "$url/health"
 curl "$url/places?q=Berlin"
-az containerapp replica list -g rg-pf-<owner>-t03 -n pf-<owner>-placefinder -o table
-az containerapp logs show -g rg-pf-<owner>-t03 -n pf-<owner>-placefinder --follow
+az containerapp replica list --resource-group rg-pf-<owner>-t03 --name pf-<owner>-placefinder --output table
+az containerapp logs show --resource-group rg-pf-<owner>-t03 --name pf-<owner>-placefinder --follow
 ```
 
 Nach einigen Minuten ohne Anfragen zeigt `replica list` keine Replikate mehr. Die nächste Anfrage startet wieder eines (Kaltstart, einige Sekunden).

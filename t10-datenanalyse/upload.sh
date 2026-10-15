@@ -12,6 +12,6 @@ parquet="$DATA_DIR/places.parquet"
 
 uv run export_geoparquet.py "$(download_cities)" "$parquet"
 # --auth-mode login: your Entra ID login with the role from infra/main.tf
-az storage blob upload --auth-mode login --account-name "$account" -c lake \
-  -n places/places.parquet -f "$parquet" --overwrite -o none
+az storage blob upload --auth-mode login --account-name "$account" --container-name lake \
+  --name places/places.parquet --file "$parquet" --overwrite --output none
 log "Uploaded. Next: ./query-duckdb.sh"

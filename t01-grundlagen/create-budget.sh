@@ -10,14 +10,14 @@ source "$(dirname "$0")/../lib/provider.sh"
 check_login
 budget_name=$(name monthly-budget)
 url="/subscriptions/$(subscription_id)/providers/Microsoft.Consumption/budgets/$budget_name?api-version=2023-05-01"
-if az rest --method get --url "$url" -o none 2>/dev/null; then
+if az rest --method get --url "$url" --output none 2>/dev/null; then
   log "Budget $budget_name exists already. To change it, run ./delete-budget.sh first."
   exit 0
 fi
-start=$(date -u +%Y-%m-01T00:00:00Z)
-end=$(date -u -d "$(date -u +%Y-%m-01) +1 year" +%Y-%m-%dT00:00:00Z)
+start=$(date --utc +%Y-%m-01T00:00:00Z)
+end=$(date --utc --date "$(date --utc +%Y-%m-01) +1 year" +%Y-%m-%dT00:00:00Z)
 body=$(mktemp)
-trap 'rm -f "$body"' EXIT
+trap 'rm --force "$body"' EXIT
 
 alert() {   # alert <Actual|Forecasted> <percent>
   cat <<JSON
@@ -49,5 +49,5 @@ JSON
 
 log "Creating budget $budget_name ($BUDGET_AMOUNT per month, alerts to $ALERT_EMAIL) ..."
 az rest --method put --body "@$body" --url "$url" \
-  --query '{name:name, amount:properties.amount, from:properties.timePeriod.startDate}' -o table
+  --query '{name:name, amount:properties.amount, from:properties.timePeriod.startDate}' --output table
 log "Done. Check it in the portal: Cost Management > Budgets."

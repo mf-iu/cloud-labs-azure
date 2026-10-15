@@ -10,7 +10,7 @@ load_state t07
 file="${1:?Usage: $0 <file> [name]}"
 blob="${2:-tiles/$(basename "$file")}"
 export AZURE_STORAGE_ACCOUNT="$STORAGE_ACCOUNT"
-AZURE_STORAGE_KEY=$(az storage account keys list -n "$STORAGE_ACCOUNT" --query '[0].value' -o tsv)
+AZURE_STORAGE_KEY=$(az storage account keys list --name "$STORAGE_ACCOUNT" --query '[0].value' --output tsv)
 export AZURE_STORAGE_KEY
-az storage blob upload -c data -n "$blob" -f "$file" --overwrite -o none
+az storage blob upload --container-name data --name "$blob" --file "$file" --overwrite --output none
 log "Uploaded to https://$STORAGE_ACCOUNT.blob.core.windows.net/data/$blob"

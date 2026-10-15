@@ -12,11 +12,11 @@ account=$(tofu_out storage_account)
 model_uri=$(tofu_out model_uri)
 blob="${model_uri#*.blob.core.windows.net/ml/}"
 
-az storage blob upload --auth-mode login --account-name "$account" -c ml \
-  -n "$blob" -f "$model" --overwrite -o none
+az storage blob upload --auth-mode login --account-name "$account" --container-name ml \
+  --name "$blob" --file "$model" --overwrite --output none
 log "Uploaded to $model_uri"
 
 # A changed environment variable creates a new revision with fresh replicas
-az containerapp update -g "$(tofu_out resource_group)" -n "$(tofu_out container_app)" \
-  --set-env-vars "MODEL_UPLOADED=$(date -u +%Y%m%dT%H%M%SZ)" -o none
+az containerapp update --resource-group "$(tofu_out resource_group)" --name "$(tofu_out container_app)" \
+  --set-env-vars "MODEL_UPLOADED=$(date --utc +%Y%m%dT%H%M%SZ)" --output none
 log "New revision started."

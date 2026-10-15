@@ -8,5 +8,5 @@ source "$(dirname "$0")/../lib/provider.sh"
 check_login
 confirm "Delete resource group $(rg_name tfstate) with all OpenTofu states?" || exit 0
 delete_rg tfstate
-rm -f "$STATE_DIR/backend.hcl"
+rm --force "$STATE_DIR/backend.hcl"
 log "State storage deleted."

@@ -27,13 +27,13 @@ Seit dem 31. März 2026 haben neue Virtual Networks standardmäßig keinen impli
 ## Prüfen
 
 ```bash
-az network nsg rule list -g rg-pf-<owner>-t04 --nsg-name nsg-db --include-default -o table
-az network vnet subnet list -g rg-pf-<owner>-t04 --vnet-name pf-<owner>-vnet -o table
+az network nsg rule list --resource-group rg-pf-<owner>-t04 --nsg-name nsg-db --include-default --output table
+az network vnet subnet list --resource-group rg-pf-<owner>-t04 --vnet-name pf-<owner>-vnet --output table
 ssh azureuser@<ip-der-test-vm>        # mit --with-vm
 ./diagnose.sh www.openstreetmap.org
 ```
 
-`diagnose.sh` zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl -v`) und die Zertifikatskette (`openssl s_client`).
+`diagnose.sh` zeigt nacheinander DNS-Antworten, die Delegation ab der Root-Zone (`dig +trace`), Verbindungsaufbau und TLS-Handshake (`curl --verbose`) und die Zertifikatskette (`openssl s_client`).
 
 ## Aufräumen
 

@@ -34,17 +34,17 @@ Die VM-Größe steht in `config.env` (`VM_SIZE`, Standard `Standard_B1s`). Das S
 Welche B-Größen in der Region ohne Einschränkung verfügbar sind, zeigt:
 
 ```bash
-az vm list-skus -l <region> --size Standard_B --resource-type virtualMachines \
-  --query "[?length(restrictions)==\`0\`].name" -o tsv
+az vm list-skus --location <region> --size Standard_B --resource-type virtualMachines \
+  --query "[?length(restrictions)==\`0\`].name" --output tsv
 ```
 
 ## Prüfen
 
 ```bash
 ssh azureuser@<ip> cloud-init status --wait
-ssh azureuser@<ip> journalctl -u placefinder -n 50
+ssh azureuser@<ip> journalctl --unit placefinder --lines 50
 curl "http://<ip>:8000/places?q=Erfurt"
-az resource list -g rg-pf-<owner>-t02 -o table     # was wurde alles angelegt?
+az resource list --resource-group rg-pf-<owner>-t02 --output table     # was wurde alles angelegt?
 ```
 
 ## Aufräumen

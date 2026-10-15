@@ -4,9 +4,9 @@
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
-log "$(az version --query '"azure-cli"' -o tsv | sed 's/^/Azure CLI /')"
+log "$(az version --query '"azure-cli"' --output tsv | sed 's/^/Azure CLI /')"
 check_login
-az account show --query '{subscription:name, id:id, user:user.name, tenant:tenantId, state:state}' -o table
+az account show --query '{subscription:name, id:id, user:user.name, tenant:tenantId, state:state}' --output table
 log "Default location for the labs: $AZURE_LOCATION"
 allowed=$(allowed_locations)
 if [[ -z "$allowed" ]]; then
@@ -20,5 +20,5 @@ fi
 log "Budgets of this subscription:"
 az rest --method get \
   --url "/subscriptions/$(subscription_id)/providers/Microsoft.Consumption/budgets?api-version=2023-05-01" \
-  --query 'value[].{name:name, amount:properties.amount, spent:properties.currentSpend.amount}' -o table \
+  --query 'value[].{name:name, amount:properties.amount, spent:properties.currentSpend.amount}' --output table \
   || true
