@@ -9,6 +9,9 @@ source "$(dirname "$0")/../lib/provider.sh"
 LAB=t03
 image="${1:-$PLACEFINDER_IMAGE:t03}"
 check_login
+# Container Apps pulls the image from ghcr.io without credentials
+check_public_image "$image" \
+  || die "Cannot pull $image without login: it does not exist or is private. Run ./build-image.sh --push and make the package public on GitHub."
 ensure_providers Microsoft.App Microsoft.OperationalInsights
 rg=$(rg_name "$LAB")
 ensure_rg "$LAB"
