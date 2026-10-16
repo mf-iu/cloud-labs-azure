@@ -6,7 +6,8 @@ source "$(dirname "$0")/../lib/provider.sh"
 
 LAB=t04
 check_login
-confirm "Delete resource group $(rg_name "$LAB") with network, NAT gateway and VM?" || exit 0
+confirm "Delete resource group $(rg_name "$LAB") with network, NAT gateway and test VMs?" || exit 0
 delete_rg "$LAB"
 clear_state "$LAB"
+rm --force "$STATE_DIR/$LAB.known_hosts"   # host keys of the test VMs (check-vpc.sh)
 log "Network deleted."

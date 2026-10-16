@@ -5,7 +5,9 @@
 # Azure subnets span all availability zones of the region.
 #
 # Usage: ./create-vnet.sh [--with-vm] [--with-nat]
-#   --with-vm   test VM in the public subnet (SSH from your IP only)
+#   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
+#               only) and a VM without public address in the application
+#               subnet (SSH only from the public subnet); check with ./check-vpc.sh
 #   --with-nat  NAT gateway for the application subnet (about 1 EUR per day!)
 source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
@@ -26,6 +28,7 @@ if $with_vm; then check_vm_size "$size"; fi
 rg=$(rg_name "$LAB")
 [[ "$(az group exists --name "$rg")" == "false" ]] || die "$rg exists already. Run ./destroy-vnet.sh first."
 ensure_rg "$LAB"
+clear_state "$LAB"   # values of an earlier run
 vnet=$(name vnet)
 
 rule() {   # rule <nsg> <name> <priority> <access> <source> <ports>
@@ -62,18 +65,32 @@ if $with_nat; then
   az network public-ip create --resource-group "$rg" --name nat-ip --sku Standard --output none
   az network nat gateway create --resource-group "$rg" --name "$(name nat)" --public-ip-addresses nat-ip --output none
   az network vnet subnet update --resource-group "$rg" --vnet-name "$vnet" --name app --nat-gateway "$(name nat)" --output none
+  save_state "$LAB" NAT true
 fi
 
 if $with_vm; then
   [[ -f "$SSH_PUBLIC_KEY" ]] || die "SSH key $SSH_PUBLIC_KEY not found. Create it in the WSL shell, not in the dev container: ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519"
   rule nsg-public allow-ssh-from-my-ip 110 Allow "$(my_ip)/32" 22
-  public_ip=$(az vm create --resource-group "$rg" --name "$(name "$LAB-vm")" --image Ubuntu2404 \
-    --size "$size" --admin-username azureuser --ssh-key-values "$SSH_PUBLIC_KEY" \
-    --vnet-name "$vnet" --subnet public --nsg "" --public-ip-sku Standard \
-    --os-disk-size-gb 64 --storage-sku Premium_LRS \
-    --query publicIpAddress --output tsv) ||
-    die "VM creation failed. On SkuNotAvailable set another VM_SIZE in config.env (e.g. Standard_B2ats_v2) or another AZURE_LOCATION, then run ./destroy-vnet.sh and try again."
-  log "Test VM: ssh azureuser@$public_ip"
+  # before deny-other-vnet (4000): SSH into the app subnet only from the bastion's subnet
+  rule nsg-app allow-ssh-from-public 110 Allow 10.20.0.0/24 22
+
+  vm() {   # vm <name> <subnet> <query> <options for the public address...>; prints the queried value
+    az vm create --resource-group "$rg" --name "$(name "$LAB-$1")" --image Ubuntu2404 \
+      --size "$size" --admin-username azureuser --ssh-key-values "$SSH_PUBLIC_KEY" \
+      --vnet-name "$vnet" --subnet "$2" --nsg "" "${@:4}" \
+      --os-disk-size-gb 64 --storage-sku Premium_LRS \
+      --tags "course=$COURSE_TAG" "lab=$LAB" --query "$3" --output tsv ||
+      die "VM creation failed. On SkuNotAvailable set another VM_SIZE in config.env (e.g. Standard_B2ats_v2) or another AZURE_LOCATION, then run ./destroy-vnet.sh and try again."
+  }
+  log "Creating the bastion in subnet public and a private VM in subnet app ..."
+  bastion_ip=$(vm bastion public publicIpAddress --public-ip-sku Standard)
+  private_ip=$(vm private app privateIpAddress --public-ip-address "")
+  save_state "$LAB" SSH_USER azureuser
+  save_state "$LAB" BASTION_IP "$bastion_ip"
+  save_state "$LAB" PRIVATE_IP "$private_ip"
+  log "Bastion:    ssh azureuser@$bastion_ip"
+  log "Private VM: ssh -J azureuser@$bastion_ip azureuser@$private_ip"
+  log "Check both: ./check-vpc.sh"
 fi
 
 log "Network created. Overview:"
