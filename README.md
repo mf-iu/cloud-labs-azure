@@ -71,7 +71,7 @@ t01-grundlagen/register-providers.sh
 | 2 | [t02-vm](t02-vm/README.md) | PlaceFinder v0 per cloud-init auf einer Azure-VM (IaaS) | Azure CLI |
 | 3 | [t03-container](t03-container/README.md) | Lokaler Kubernetes-Cluster mit k3d; Betrieb mit Azure Container Apps (Serverless Container) | k3d, kubectl, Docker, Azure CLI |
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | Virtual Network mit öffentlichem und privaten Subnetzen, NSGs, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | Azure CLI, k3d, kubectl, Helm |
-| 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version als Revision ausrollen und testen, API Management | Azure CLI |
+| 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest als Revision ausrollen, Smoke-Test der REST-API, API Management mit Schlüssel und Rate Limit | Azure CLI, curl |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | Azure Database for PostgreSQL mit PostGIS, Import von cities15000, räumliche Abfragen | Azure CLI, psql |
 | 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Blob Storage, SAS-Token, Range Requests, CORS, Lebenszyklusregeln | Azure CLI |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Secrets (OIDC) | OpenTofu |
