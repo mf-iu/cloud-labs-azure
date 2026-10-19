@@ -73,7 +73,7 @@ t01-grundlagen/register-providers.sh
 | 4 | [t04-netzwerk](t04-netzwerk/README.md) | Virtual Network mit öffentlichem und privaten Subnetzen, NSGs, Test-VMs mit Bastion-Host, Diagnose; lokal Gateway API und TLS mit cert-manager | Azure CLI, k3d, kubectl, Helm |
 | 5 | [t05-rest-api](t05-rest-api/README.md) | Neue API-Version per Digest als Revision ausrollen, Smoke-Test der REST-API, API Management mit Schlüssel und Rate Limit | Azure CLI, curl |
 | 6 | [t06-datenbank](t06-datenbank/README.md) | PostGIS lokal und als Azure Database for PostgreSQL, Import von cities15000, räumliche Abfragen, PlaceFinder mit Datenbank, Backups | Azure CLI, psql, uv |
-| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Blob Storage, SAS-Token, Range Requests, CORS, Lebenszyklusregeln | Azure CLI |
+| 7 | [t07-objektspeicher](t07-objektspeicher/README.md) | Valkey als Cache und Geo-Index, SeaweedFS lokal und Blob Storage mit SAS-Token, Range Requests und CORS, Kartenkacheln als PMTiles, Anbieterwechsel | Azure CLI, pmtiles, uv |
 | 8 | [t08-iac](t08-iac/README.md) | Infrastruktur der Zwischenpräsentation als OpenTofu-Code, Remote State, GitHub Actions ohne Secrets (OIDC) | OpenTofu |
 | 9 | [t09-serverless](t09-serverless/README.md) | Täglicher GeoNames-Abgleich als Azure Function (Flex Consumption, Timer-Trigger) | OpenTofu, Core Tools |
 | 10 | [t10-datenanalyse](t10-datenanalyse/README.md) | GeoParquet im Data Lake, Abfragen mit DuckDB, Overture Maps | OpenTofu, DuckDB |

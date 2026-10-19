@@ -27,8 +27,9 @@ AZURE_STORAGE_KEY=$(az storage account keys list --resource-group "$rg" --name "
 export AZURE_STORAGE_KEY
 
 az storage container create --name data --output none
-az storage cors add --services b --methods GET HEAD --origins '*' \
-  --allowed-headers range if-none-match --exposed-headers etag content-length content-range \
+# the map of PlaceFinder reads PMTiles with range requests
+az storage cors add --services b --methods GET HEAD --origins http://localhost:5173 \
+  --allowed-headers range --exposed-headers etag content-length content-range \
   --max-age 3600
 az storage account management-policy create --resource-group "$rg" --account-name "$account" \
   --policy @lifecycle.json --output none
@@ -36,4 +37,4 @@ az storage account management-policy create --resource-group "$rg" --account-nam
 log "Uploading GeoNames cities15000 as raw data ..."
 az storage blob upload --container-name data --name raw/geonames/cities15000.txt --file "$(download_cities)" --overwrite --output none
 az storage blob list --container-name data --query '[].{name:name, size:properties.contentLength}' --output table
-log "Next: ./upload.sh <file> [name] and ./sas.sh <name>"
+log "Next: ./make-tiles.sh, ./upload.sh ../.state/data/erfurt.pmtiles, ./sas.sh tiles/erfurt.pmtiles"
