@@ -4,15 +4,16 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 5.8"
+      version = "~> 5.10"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.7"
+      version = "~> 3.9"
     }
   }
 
-  # Remote state in Azure Blob Storage; see .state/backend.hcl
+  # Remote state in Azure Blob Storage; storage account and key come from
+  # tools/tofu.sh (.state/backend.hcl, written by t08-iac/bootstrap-state.sh)
   backend "azurerm" {}
 }
 

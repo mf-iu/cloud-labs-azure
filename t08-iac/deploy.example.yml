@@ -1,50 +1,79 @@
-# Example workflow for your PlaceFinder fork: copy it to
-# .github/workflows/deploy.yml. It builds the image, pushes it to the
-# GitHub Container Registry and updates the container app, without
-# stored Azure secrets.
+# Deploy workflow for your PlaceFinder fork (session 8): copy it to
+# .github/workflows/deploy.yml. It runs after a successful run of the CI
+# pipeline (ci.yml) on master, rolls out the image of that run by digest as
+# a new revision of the container app of t08-iac/infra and runs the smoke
+# test of session 5 against it - without stored Azure secrets: the workflow
+# exchanges its OIDC token for a token of the managed identity from
+# t08-iac/github-oidc.
 #
-# Repository variables (from "tofu output" of t08-iac/github-oidc and t08-iac/infra):
+# Repository variables (Settings > Secrets and variables > Actions >
+# Variables), from "tofu output" of t08-iac/github-oidc and t08-iac/infra:
 #   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,
-#   RESOURCE_GROUP, CONTAINER_APP
+#   RESOURCE_GROUP, CONTAINER_APP, SERVICE_URL
 name: deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [master]
 
 permissions:
   contents: read
-  packages: write   # push to ghcr.io with GITHUB_TOKEN
   id-token: write   # needed to request the OIDC token
+
+# one rollout at a time; a newer one waits instead of cancelling a running one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # only after a green pipeline for a push (pull requests push no image)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Log in to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push the image
+      - name: Image of the CI run, by digest
+        # a tag can move, the digest names exactly the tested image
         run: |
-          image="ghcr.io/${GITHUB_REPOSITORY,,}:${GITHUB_SHA::12}"
-          docker build --tag "$image" .
-          docker push "$image"
-          echo "IMAGE=$image" >> "$GITHUB_ENV"
+          ref="ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.event.workflow_run.head_sha }}"
+          digest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}' | jq --raw-output .digest)
+          echo "IMAGE=${ref%:*}@$digest" >> "$GITHUB_ENV"
 
       - name: Log in to Azure via OIDC
-        uses: azure/login@v2
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Roll out the new image
+        env:
+          RG: ${{ vars.RESOURCE_GROUP }}
+          APP: ${{ vars.CONTAINER_APP }}
+        # single revision mode: the traffic moves to the new revision as soon
+        # as it is ready; the old one keeps serving until then
         run: |
-          az containerapp update --resource-group "${{ vars.RESOURCE_GROUP }}" \
-            --name "${{ vars.CONTAINER_APP }}" --image "$IMAGE"
+          az config set extension.use_dynamic_install=yes_without_prompt --only-show-errors
+          az containerapp update --resource-group "$RG" --name "$APP" --image "$IMAGE" --output none
+          for _ in $(seq 60); do
+            ready=$(az containerapp show --resource-group "$RG" --name "$APP" \
+              --query "properties.latestReadyRevisionName == properties.latestRevisionName" --output tsv)
+            echo "$(date +%T) ready: $ready"
+            [[ "${ready,,}" == true ]] && exit 0
+            sleep 10
+          done
+          exit 1
+
+      - name: Check out the lab repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mf-iu/cloud-labs-azure
+          persist-credentials: false
+
+      - name: Smoke test (session 5)
+        # the lab scripts need a config.env; the example is enough here
+        run: |
+          cp config.example.env config.env
+          t05-rest-api/smoke-test.sh "${{ vars.SERVICE_URL }}"

@@ -1,20 +1,23 @@
-# prefix, owner, suffix, location, placefinder_image and admin_cidrs are
-# set by tools/tofu.sh from config.env
+# prefix, owner, suffix, location and placefinder_image are set by
+# tools/tofu.sh from config.env
 
 variable "prefix" {
-  type = string
+  description = "Project prefix for all names"
+  type        = string
 }
 
 variable "owner" {
-  type = string
+  description = "Initials of the participant"
+  type        = string
 }
 
 variable "suffix" {
-  type = string
+  description = "Random suffix for globally unique names (.state/suffix)"
+  type        = string
 }
 
 variable "location" {
-  description = "Azure region"
+  description = "Azure region (AZURE_LOCATION in config.env)"
   type        = string
 }
 
@@ -24,19 +27,19 @@ variable "placefinder_image" {
 }
 
 variable "image_tag" {
-  description = "Image tag to deploy"
+  description = "Image tag to deploy first; the pipeline deploys later versions"
   type        = string
-  default     = "t07"
+  default     = "t08"
 }
 
 variable "enable_database" {
-  description = "Create the PostgreSQL Flexible Server (delete it after the lab)"
+  description = "Create PostgreSQL in the database subnet (free for 12 months, destroy it after the lab)"
   type        = bool
   default     = false
 }
 
-variable "admin_cidrs" {
-  description = "Networks that may connect to the database; tools/tofu.sh sets your IP"
-  type        = list(string)
-  default     = []
+variable "max_replicas" {
+  description = "Upper limit for the number of PlaceFinder replicas"
+  type        = number
+  default     = 2
 }
