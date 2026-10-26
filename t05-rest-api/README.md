@@ -1,6 +1,8 @@
 # T05 – Neue API-Version ausrollen, testen und absichern
 
-**Ziel:** Der Stand `t05` von PlaceFinder – die REST-API v1 mit GeoJSON, Paginierung, ETags und Fehlern nach RFC 9457 – läuft als neue Revision der Container App aus Termin 3. Ein Smoke-Test prüft die HTTP-Eigenschaften aus Termin 5 gegen die Cloud. Optional steht Azure API Management mit Abonnementschlüssel und Rate Limit davor.
+Die Übung von Termin 5 läuft im Termin: einen Filter mit Test ergänzen, den eigenen Stand per Digest auf dem Dienst aus Termin 3 ausrollen, mit dem Smoke-Test prüfen und den Dienst wieder löschen. Das API-Gateway mit Rate Limit ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine.
+
+**Ziel:** Der eigene Stand von PlaceFinder – der Tag `t05` mit einem zusätzlichen Filter – läuft als neue Revision der Container App aus Termin 3. Ein Smoke-Test prüft die HTTP-Eigenschaften aus Termin 5 gegen die Cloud. Als Zusatz steht Azure API Management mit Abonnementschlüssel und Rate Limit davor.
 
 | Skript | Aufgabe |
 |---|---|
@@ -11,27 +13,36 @@
 
 **Kosten:** Container App wie in Termin 3, im Freikontingent. API Management im Tarif Consumption: 1 Million Aufrufe im Monat kostenlos.
 
-## Voraussetzungen
+## Im Termin: eigenen Stand ausrollen, prüfen, löschen
 
-- Image `$PLACEFINDER_IMAGE:t05` auf ghcr.io, öffentlich. Im Terminal des Dev Containers:
-  ```bash
-  cd /workspaces/placefinder
-  git fetch upstream --tags                # Tag t05 der Musterlösung holen
-  git switch --detach t05                  # oder den eigenen Stand verwenden
-  ../cloud-labs-azure/t03-container/build-image.sh --push --tag t05
-  git switch master
-  ```
-  `build-image.sh` lädt `placefinder:0.5.0` und `placefinder:t05` hoch; `upstream` einrichten: siehe [t02-vm](../t02-vm/README.md#container-und-compose).
-- Die Container App aus [t03-container](../t03-container/README.md) (Teil 2) darf noch laufen. Wurde sie gelöscht, legt `update-service.sh` sie neu an.
+### Eigenen Stand bauen
 
-## Schritte
+Im Terminal des Dev Containers einen Zweig vom Tag `t05` der Musterlösung anlegen, den Filter ergänzen (Aufgabe auf der Übungsfolie von Termin 5) und das Image nach ghcr.io laden:
+
+```bash
+cd /workspaces/placefinder
+git fetch upstream --tags                # tag t05 of the sample solution
+git switch --create filter t05           # own branch from t05
+# ... add the filter and its test ...
+uv run pytest
+../cloud-labs-azure/t03-container/build-image.sh --push --tag t05
+```
+
+`build-image.sh` baut den ausgecheckten Stand und lädt `placefinder:0.5.0` und `placefinder:t05` hoch; das Paket auf ghcr.io muss öffentlich sein. `upstream` einrichten: siehe [t02-vm](../t02-vm/README.md#container-und-compose). Ohne eigene Änderung lässt sich auch der Tag `t05` selbst ausrollen.
+
+Die Container App aus [t03-container](../t03-container/README.md) (Teil 2) darf noch laufen. Wurde sie gelöscht, legt `update-service.sh` sie neu an.
+
+### Ausrollen und prüfen
 
 ```bash
 cd /workspaces/cloud-labs-azure/t05-rest-api
-./update-service.sh                      # wenige Minuten, endet mit dem Smoke-Test
-./smoke-test.sh                          # jederzeit wieder; ohne URL: die App aus Termin 3
-./smoke-test.sh http://localhost:8000    # dieselben Prüfungen gegen den lokalen Server
+./update-service.sh                      # a few minutes, ends with the smoke test
+./smoke-test.sh                          # any time again; without URL: the service from t03
+curl "<SERVICE_URL>/v1/places?min_population=1000000"   # the new filter
+./smoke-test.sh http://localhost:8000    # the same checks against the local server
 ```
+
+Die URL steht am Ende der Ausgabe von `update-service.sh` und in `../.state/t03.env` (`SERVICE_URL`). Den neuen Filter kennt der Smoke-Test nicht; ihn prüft `curl` von Hand.
 
 **Digest statt Tag:** `update-service.sh` rollt `ghcr.io/<github-user>/placefinder@sha256:…` aus, nicht `…:t05`. Ein Tag lässt sich später auf ein anderes Image setzen, der Digest benennt genau dieses eine. So bleibt nachvollziehbar, welche Version läuft, und jede neue Replik startet dasselbe Image. Außerdem legt Container Apps nur bei einer Änderung des Templates eine neue Revision an – ein neu hochgeladenes `:t05` unter demselben Namen käme sonst nicht an.
 
@@ -41,7 +52,31 @@ cd /workspaces/cloud-labs-azure/t05-rest-api
 
 **Karte mit den Daten aus der Cloud:** In PlaceFinder `python3 -m http.server 5173 --directory frontend` starten und `http://localhost:5173/?api=<SERVICE_URL>` öffnen. Die API erlaubt diese Herkunft über CORS (`CORS_ORIGINS`).
 
-### Optional: API Management mit Rate Limit
+### Aufräumen – gehört zur Übung
+
+```bash
+../t03-container/destroy.sh
+../tools/find-leftovers.sh
+```
+
+Wer das API-Gateway (Zusatz) angelegt hat, löscht es vorher mit `./destroy-api-gateway.sh` – es zeigt auf den Dienst. Erst wenn `find-leftovers.sh` nichts mehr meldet, ist die Übung fertig.
+
+### Typische Probleme
+
+- `Cannot pull … without login`: Das Image fehlt auf ghcr.io oder ist privat – siehe „Eigenen Stand bauen“.
+- Smoke-Test meldet Version 0.1.x und viele `FAIL`: Die App läuft noch mit dem Stand von Termin 3. Image mit `--tag t05` bauen, dann `./update-service.sh`.
+- Revision wird nicht bereit: `az containerapp revision list --resource-group rg-pf-<owner>-t03 --name pf-<owner>-placefinder --output table` und `az containerapp logs show … --follow`.
+- `429` im Smoke-Test über API Management: kurz nach `rate-limit-test.sh` – eine Minute warten.
+
+### Fragen zum Weiterdenken
+
+- Welche Aufgaben übernimmt API Management, die sonst in der Anwendung stünden?
+- Wie ließe sich mit zwei aktiven Revisionen eine neue API-Version risikoarm ausprobieren, und wie käme man zurück?
+- Wie könnte PlaceFinder hinter einem Präfix richtige Links erzeugen (`X-Forwarded-Prefix`, `--root-path` von Uvicorn)?
+- Wie kommt die Client-IP-Adresse durch API Management und Container Apps bis zur Anwendung (`X-Forwarded-For`)?
+- Warum gehört der Abonnementschlüssel in einen Header und nicht in die URL?
+
+## Zusatz: API Management mit Rate Limit
 
 ```bash
 ./create-api-gateway.sh         # einige Minuten
@@ -58,27 +93,7 @@ Das Skript legt eine API-Management-Instanz im Tarif Consumption an, eine API mi
 
 Gelöschte API-Management-Instanzen bleiben 48 Stunden reserviert (Soft Delete). Wer denselben Namen sofort wieder braucht, löscht sie endgültig mit `az apim deletedservice purge`.
 
-## Typische Probleme
-
-- `Cannot pull … without login`: Das Image fehlt auf ghcr.io oder ist privat – siehe Voraussetzungen.
-- Smoke-Test meldet Version 0.1.x und viele `FAIL`: Die App läuft noch mit dem Stand von Termin 3. Image mit `--tag t05` bauen, dann `./update-service.sh`.
-- Revision wird nicht bereit: `az containerapp revision list --resource-group rg-pf-<owner>-t03 --name pf-<owner>-placefinder --output table` und `az containerapp logs show … --follow`.
-- `429` im Smoke-Test über API Management: kurz nach `rate-limit-test.sh` – eine Minute warten.
-
-## Aufräumen
-
-```bash
-./destroy-api-gateway.sh       # falls angelegt
-../t03-container/destroy.sh
-```
-
-## Fragen zum Weiterdenken
-
-- Welche Aufgaben übernimmt API Management, die sonst in der Anwendung stünden?
-- Wie ließe sich mit zwei aktiven Revisionen eine neue API-Version risikoarm ausprobieren, und wie käme man zurück?
-- Wie könnte PlaceFinder hinter einem Präfix richtige Links erzeugen (`X-Forwarded-Prefix`, `--root-path` von Uvicorn)?
-- Wie kommt die Client-IP-Adresse durch API Management und Container Apps bis zur Anwendung (`X-Forwarded-For`)?
-- Warum gehört der Abonnementschlüssel in einen Header und nicht in die URL?
+Das Gateway braucht den laufenden Dienst: erst `./update-service.sh`, am Ende `./destroy-api-gateway.sh` und `../t03-container/destroy.sh`.
 
 ## Andere Anbieter
 
