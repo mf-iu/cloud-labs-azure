@@ -34,7 +34,7 @@ Ohne Cloud: Die Dateien landen unter `out/geonames/changes/<datum>/`. Die ganze 
 ./invoke.sh 2026-10-01      # bestimmter Tag
 ```
 
-Mit Datenbank (z. B. aus Termin 6; die Datenbank aus `t08-iac` liegt im privaten Netz und ist von außen nicht erreichbar):
+Mit Datenbank (z. B. aus Termin 6; die Datenbank aus `06-infrastructure-as-code/service` liegt im privaten Netz und ist von außen nicht erreichbar):
 
 ```bash
 ./deploy.sh -var "database_url=postgresql://…?sslmode=require"

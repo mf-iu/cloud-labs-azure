@@ -13,7 +13,7 @@ terraform {
 }
 
 # The subscription comes from ARM_SUBSCRIPTION_ID (set by tools/tofu.sh).
-# Resource providers are registered once by t01-grundlagen/register-providers.sh.
+# Resource providers are registered once by 01-account/register-providers.sh.
 provider "azurerm" {
   features {}
   resource_provider_registrations = "none"

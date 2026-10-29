@@ -2,7 +2,6 @@
 # Upload a trained model to the location that /estimate reads at start-up
 # and start a new revision of the container app so that it loads the model.
 # Usage: ./upload-model.sh <model.joblib>
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 check_login

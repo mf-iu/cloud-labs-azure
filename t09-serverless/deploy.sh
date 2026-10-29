@@ -2,7 +2,6 @@
 # Create the infrastructure with OpenTofu and publish the function code
 # with the Azure Functions Core Tools (remote build of the dependencies).
 # Usage: ./deploy.sh [extra tofu arguments, e.g. -var database_url=...]
-source "$(dirname "$0")/../lib/common.sh"
 source "$(dirname "$0")/../lib/provider.sh"
 
 require func

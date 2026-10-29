@@ -1,0 +1,6 @@
+{
+  "id": "provider-tools",
+  "version": "1.0.0",
+  "name": "Azure Functions Core Tools",
+  "description": "func for the Azure labs (t09), from the package repository of Microsoft"
+}
