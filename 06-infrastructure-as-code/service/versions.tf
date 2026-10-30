@@ -17,6 +17,8 @@ terraform {
   backend "azurerm" {}
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # The subscription comes from ARM_SUBSCRIPTION_ID (set by tools/tofu.sh).
 # Resource providers are registered once by 01-account/register-providers.sh.
 provider "azurerm" {

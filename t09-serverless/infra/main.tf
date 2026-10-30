@@ -1,6 +1,8 @@
 # Daily GeoNames update as Azure Function (Flex Consumption plan).
 # The code is published separately: ../deploy.sh
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t09"
   tags = {
@@ -9,13 +11,19 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "azurerm_client_config" "current" {}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_resource_group" "main" {
   name     = "rg-${local.name}"
   location = var.location
   tags     = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # One storage account: deployment package of the function and the data
 resource "azurerm_storage_account" "main" {
@@ -29,17 +37,23 @@ resource "azurerm_storage_account" "main" {
   tags                            = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_storage_container" "deploy" {
   name                  = "deploy"
   storage_account_id    = azurerm_storage_account.main.id
   container_access_type = "private"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_storage_container" "data" {
   name                  = "data"
   storage_account_id    = azurerm_storage_account.main.id
   container_access_type = "private"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Logs and metrics of the function (the first 5 GB per month are free)
 resource "azurerm_log_analytics_workspace" "main" {
@@ -51,6 +65,8 @@ resource "azurerm_log_analytics_workspace" "main" {
   tags                = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_application_insights" "main" {
   name                = "${local.name}-insights"
   resource_group_name = azurerm_resource_group.main.name
@@ -60,6 +76,8 @@ resource "azurerm_application_insights" "main" {
   tags                = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_service_plan" "main" {
   name                = "${local.name}-plan"
   resource_group_name = azurerm_resource_group.main.name
@@ -68,6 +86,8 @@ resource "azurerm_service_plan" "main" {
   sku_name            = "FC1"
   tags                = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_function_app_flex_consumption" "sync" {
   name                = "${local.name}-${var.suffix}-geonames"
@@ -102,12 +122,16 @@ resource "azurerm_function_app_flex_consumption" "sync" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # The function identity may write the change files ...
 resource "azurerm_role_assignment" "function_data" {
   scope                = azurerm_storage_container.data.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.sync.identity[0].principal_id
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # ... and so may you, for local tests with "func start" and for reading
 resource "azurerm_role_assignment" "me_data" {

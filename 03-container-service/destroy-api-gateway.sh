@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+
 # Delete API Management (resource group of lab t05).
+#
 # Usage: ./destroy-api-gateway.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t05
 check_login

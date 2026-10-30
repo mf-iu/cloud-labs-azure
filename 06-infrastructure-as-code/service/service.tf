@@ -19,6 +19,8 @@ resource "azurerm_container_app_environment" "main" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   # with a database: connection string without password, the password comes
   # from a secret of the container app as PGPASSWORD (libpq reads it);
@@ -28,6 +30,8 @@ locals {
     DATABASE_INIT = "true"
   } : {}
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_container_app" "placefinder" {
   name                         = "${local.name}-t08-placefinder"

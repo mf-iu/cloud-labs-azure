@@ -2,6 +2,8 @@
 # /estimate endpoint on Azure Container Apps. The app reads the model with
 # its managed identity.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t11"
   tags = {
@@ -10,13 +12,19 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "azurerm_client_config" "current" {}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_resource_group" "main" {
   name     = "rg-${local.name}"
   location = var.location
   tags     = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_storage_account" "ml" {
   name                            = substr(replace("${local.name}${var.suffix}", "-", ""), 0, 24)
@@ -29,11 +37,15 @@ resource "azurerm_storage_account" "ml" {
   tags                            = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_storage_container" "ml" {
   name                  = "ml"
   storage_account_id    = azurerm_storage_account.ml.id
   container_access_type = "private"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_container_app_environment" "main" {
   name                = "${local.name}-env"
@@ -41,6 +53,8 @@ resource "azurerm_container_app_environment" "main" {
   location            = azurerm_resource_group.main.location
   tags                = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_container_app" "estimate" {
   name                         = "${local.name}-estimate"
@@ -81,12 +95,16 @@ resource "azurerm_container_app" "estimate" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # The app may read the models, you may write them (MLflow, upload-model.sh)
 resource "azurerm_role_assignment" "app" {
   scope                = azurerm_storage_container.ml.id
   role_definition_name = "Storage Blob Data Reader"
   principal_id         = azurerm_container_app.estimate.identity[0].principal_id
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_role_assignment" "me" {
   scope                = azurerm_storage_account.ml.id

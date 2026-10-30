@@ -3,6 +3,8 @@
 # Run 06-infrastructure-as-code/base first; the identity may change only
 # its resource group, where service creates the container app as well.
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}"
   tags = {
@@ -11,11 +13,17 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "azurerm_client_config" "current" {}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 data "azurerm_resource_group" "target" {
   name = "rg-${local.name}-t08"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_resource_group" "cicd" {
   name     = "rg-${local.name}-cicd"
@@ -23,12 +31,16 @@ resource "azurerm_resource_group" "cicd" {
   tags     = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_user_assigned_identity" "github" {
   name                = "${local.name}-github-deploy"
   resource_group_name = azurerm_resource_group.cicd.name
   location            = azurerm_resource_group.cicd.location
   tags                = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Trust: only this repository and branch, not forks or pull requests
 resource "azurerm_federated_identity_credential" "github" {
@@ -38,6 +50,8 @@ resource "azurerm_federated_identity_credential" "github" {
   issuer                    = "https://token.actions.githubusercontent.com"
   subject                   = "repo:${var.github_repository}:ref:refs/heads/${var.github_branch}"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Permission: manage resources in the resource group of base and service only
 resource "azurerm_role_assignment" "deploy" {

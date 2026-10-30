@@ -1,27 +1,44 @@
 #!/usr/bin/env bash
+
 # Show the automated backups of the PostgreSQL server: retention, backups and
 # the time span of a point-in-time restore. Changes nothing.
+#
 # Usage: ./backups.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t06
 check_login
 rg=$(rg_name "$LAB")
 [[ "$(az group exists --name "$rg")" == "true" ]] || die "No database. Run ./create-db.sh first."
+# The name of the first (only) server in the resource group
 server=$(az postgres flexible-server list --resource-group "$rg" --query '[0].name' --output tsv)
 [[ -n "$server" ]] || die "No server in $rg. Run ./create-db.sh first."
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Backup settings of $server:"
+# The query builds an object with three named fields from the answer (JMESPath);
+# --output table prints them as a table
 az postgres flexible-server show --resource-group "$rg" --name "$server" \
-  --query '{RetentionDays: backup.backupRetentionDays, GeoRedundant: backup.geoRedundantBackup, EarliestRestore: backup.earliestRestoreDate}' \
-  --output table
+    --query '{RetentionDays: backup.backupRetentionDays, GeoRedundant: backup.geoRedundantBackup, EarliestRestore: backup.earliestRestoreDate}' \
+    --output table
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 log "Backups (the first right after creation, then one a day):"
 az postgres flexible-server backup list --resource-group "$rg" --server-name "$server" \
-  --query '[].{Name: name, Type: backupType, Completed: completedTime}' --output table
+    --query '[].{Name: name, Type: backupType, Completed: completedTime}' --output table
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 earliest=$(az postgres flexible-server show --resource-group "$rg" --name "$server" \
-  --query backup.earliestRestoreDate --output tsv)
+    --query backup.earliestRestoreDate --output tsv)
+# { ...; } groups both commands: they run if there is no restore point yet
 [[ -n "$earliest" ]] || { warn "No restore window yet. Try again in a few minutes."; exit 0; }
 cat <<INFO
 

@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+
 # Delete the resource group of lab t06 with the PostgreSQL server.
+#
 # Usage: ./destroy-db.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t06
 check_login

@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+
 # Delete the resource group of lab t07 with the storage account.
+#
 # Usage: ./destroy-storage.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t07
 check_login

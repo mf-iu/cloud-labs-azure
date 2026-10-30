@@ -1,5 +1,7 @@
 # Data lake for lab t10: GeoParquet in Blob Storage, queried with DuckDB
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 locals {
   name = "${var.prefix}-${var.owner}-t10"
   tags = {
@@ -8,13 +10,19 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 data "azurerm_client_config" "current" {}
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_resource_group" "main" {
   name     = "rg-${local.name}"
   location = var.location
   tags     = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Hierarchical namespace turns Blob Storage into Data Lake Storage Gen2
 resource "azurerm_storage_account" "lake" {
@@ -29,11 +37,15 @@ resource "azurerm_storage_account" "lake" {
   tags                            = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_storage_container" "lake" {
   name                  = "lake"
   storage_account_id    = azurerm_storage_account.lake.id
   container_access_type = "private"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # DuckDB and "az storage --auth-mode login" use your Entra ID login
 resource "azurerm_role_assignment" "me" {

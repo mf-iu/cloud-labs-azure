@@ -18,7 +18,11 @@ from azure.storage.blob import ContainerClient
 
 from geonames_sync import parse_day, run
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 app = func.FunctionApp()
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 def blob_store():
@@ -34,11 +38,17 @@ def blob_store():
     return store
 
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
 @app.timer_trigger(schedule="0 30 5 * * *", arg_name="timer", run_on_startup=False)
 def geonames_daily(timer: func.TimerRequest) -> None:
     if timer.past_due:
         logging.warning("Timer is late, running now")
     run(blob_store())
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 @app.route(route="sync", methods=["POST"], auth_level=func.AuthLevel.FUNCTION)

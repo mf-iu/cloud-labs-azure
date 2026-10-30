@@ -23,11 +23,15 @@ resource "azurerm_storage_account" "data" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_storage_container" "data" {
   name                  = "data"
   storage_account_id    = azurerm_storage_account.data.id
   container_access_type = "private"
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_storage_management_policy" "data" {
   storage_account_id = azurerm_storage_account.data.id

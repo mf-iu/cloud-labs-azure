@@ -13,11 +13,15 @@ locals {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_resource_group" "main" {
   name     = "rg-${local.name}-t08"
   location = var.location
   tags     = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_virtual_network" "main" {
   name                = "${local.name}-vnet"
@@ -26,6 +30,8 @@ resource "azurerm_virtual_network" "main" {
   address_space       = ["10.20.0.0/16"]
   tags                = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # The Container Apps environment needs a subnet of its own (at least /27).
 # Outbound access stays on: the replicas pull the image from ghcr.io. In
@@ -46,6 +52,8 @@ resource "azurerm_subnet" "app" {
   }
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 # PostgreSQL Flexible Server with private access: only in this subnet,
 # without any public address
 resource "azurerm_subnet" "db" {
@@ -63,6 +71,8 @@ resource "azurerm_subnet" "db" {
     }
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Firewall of the database subnet as in session 4: PostgreSQL only from the
 # application subnet, nothing else from within the VNet
@@ -96,6 +106,8 @@ resource "azurerm_network_security_group" "db" {
     destination_port_range     = "*"
   }
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_subnet_network_security_group_association" "db" {
   subnet_id                 = azurerm_subnet.db.id

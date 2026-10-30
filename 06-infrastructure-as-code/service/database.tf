@@ -4,11 +4,15 @@
 # your computer; PlaceFinder loads the places itself at startup
 # (DATABASE_INIT, service.tf).
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "random_password" "db" {
   count   = var.enable_database ? 1 : 0
   length  = 24
   special = false
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_private_dns_zone" "db" {
   count               = var.enable_database ? 1 : 0
@@ -17,6 +21,8 @@ resource "azurerm_private_dns_zone" "db" {
   tags                = local.tags
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_private_dns_zone_virtual_network_link" "db" {
   count               = var.enable_database ? 1 : 0
   name                = "vnet"
@@ -24,6 +30,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "db" {
   virtual_network_id  = local.base.vnet_id
   tags                = local.tags
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 resource "azurerm_postgresql_flexible_server" "db" {
   count                         = var.enable_database ? 1 : 0
@@ -49,11 +57,15 @@ resource "azurerm_postgresql_flexible_server" "db" {
   depends_on = [azurerm_private_dns_zone_virtual_network_link.db]
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 resource "azurerm_postgresql_flexible_server_database" "placefinder" {
   count     = var.enable_database ? 1 : 0
   name      = "placefinder"
   server_id = azurerm_postgresql_flexible_server.db[0].id
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 # Allow-list the extensions before CREATE EXTENSION (PlaceFinder runs it)
 resource "azurerm_postgresql_flexible_server_configuration" "extensions" {

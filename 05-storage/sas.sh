@@ -1,38 +1,68 @@
 #!/usr/bin/env bash
+
 # Create a read-only SAS URL (valid for one hour) and test it: without SAS
 # token, with a range request and with a CORS preflight of the map. For a
 # PMTiles file, also print the address of the map with these tiles.
+#
 # Usage: ./sas.sh [name]   (default: raw/geonames/cities15000.txt)
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 check_login
 load_state t07
 [[ -n "${STORAGE_ACCOUNT:-}" ]] || die "No storage account. Run ./create-storage.sh first."
 blob="${1:-raw/geonames/cities15000.txt}"
+# The az storage commands read account name and key from these variables; export
+# passes them on
 export AZURE_STORAGE_ACCOUNT="$STORAGE_ACCOUNT"
 AZURE_STORAGE_KEY=$(az storage account keys list --name "$STORAGE_ACCOUNT" --query '[0].value' --output tsv)
 export AZURE_STORAGE_KEY
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# The time in an hour, in UTC and in the format the CLI expects
 expiry=$(date --utc --date '+1 hour' +%Y-%m-%dT%H:%MZ)
+# A token signed with the account key: read only (r), only over HTTPS, until the
+# expiry; --full-uri prints the whole address with the token
 url=$(az storage blob generate-sas --container-name data --name "$blob" --permissions r \
-  --expiry "$expiry" --https-only --full-uri --output tsv)
+    --expiry "$expiry" --https-only --full-uri --output tsv)
 printf '\nSAS URL (read only, until %s):\n%s\n\n' "$expiry" "$url"
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Without SAS token the blob is private (expect 404 or 409):"
+# --write-out prints only the status code; || true: an error status is expected
+# here
 curl --silent --output /dev/null --write-out '%{http_code}\n' "https://$STORAGE_ACCOUNT.blob.core.windows.net/data/$blob" || true
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 log "Range request for the first 100 bytes (expect 206 Partial Content):"
+# --dump-header - prints the response headers to stdout (- means stdout);
+# --range asks for bytes 0 to 99
 curl --silent --dump-header - --output /dev/null --range 0-99 "$url" \
-  | grep --ignore-case --extended-regexp '^HTTP|^content-range|^content-length' || true
+    | grep --ignore-case --extended-regexp '^HTTP|^content-range|^content-length' || true
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 log "CORS preflight of the map at http://localhost:5173 (expect Access-Control-Allow-Origin):"
+# The request a browser sends before a cross-origin GET with a Range header
+# (CORS preflight)
 curl --silent --request OPTIONS --dump-header - --output /dev/null \
-  --header "Origin: http://localhost:5173" --header "Access-Control-Request-Method: GET" \
-  --header "Access-Control-Request-Headers: range" "$url" \
-  | grep --ignore-case --extended-regexp '^HTTP|^access-control-allow-origin' || true
+    --header "Origin: http://localhost:5173" --header "Access-Control-Request-Method: GET" \
+    --header "Access-Control-Request-Headers: range" "$url" \
+    | grep --ignore-case --extended-regexp '^HTTP|^access-control-allow-origin' || true
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 if [[ "$blob" == *.pmtiles ]]; then
-  # the map of PlaceFinder: python3 -m http.server 5173 --directory frontend
-  printf '\nMap with these tiles (URL-encoded):\nhttp://localhost:5173/?tiles=%s\n' \
-    "$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$url")"
+    # the map of PlaceFinder: python3 -m http.server 5173 --directory frontend
+    # urllib.parse.quote encodes the signed URL so that it fits into a parameter
+    # of another URL (safe="": also / and :)
+    printf '\nMap with these tiles (URL-encoded):\nhttp://localhost:5173/?tiles=%s\n' \
+        "$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$url")"
 fi

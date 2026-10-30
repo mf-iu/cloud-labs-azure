@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+
 # Delete the resource group of lab t03 with environment and container app.
+#
 # Usage: ./destroy.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t03
 check_login

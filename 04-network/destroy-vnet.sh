@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
+
 # Delete the resource group of lab t04 with all network resources.
+#
 # Usage: ./destroy-vnet.sh
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 source "$(dirname "$0")/../lib/provider.sh"
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 LAB=t04
 check_login

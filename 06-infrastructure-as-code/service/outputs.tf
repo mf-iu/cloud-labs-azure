@@ -3,15 +3,21 @@ output "service_url" {
   value       = "https://${azurerm_container_app.placefinder.ingress[0].fqdn}"
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 output "resource_group" {
   description = "For the deploy workflow (repository variable RESOURCE_GROUP)"
   value       = local.base.resource_group
 }
 
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 output "container_app" {
   description = "For the deploy workflow (repository variable CONTAINER_APP)"
   value       = azurerm_container_app.placefinder.name
 }
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 output "database" {
   description = "Host name of PostgreSQL in the private DNS zone (only with enable_database = true)"
