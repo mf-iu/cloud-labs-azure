@@ -1,7 +1,7 @@
 # Object storage as in session 7 (05-storage/create-storage.sh):
-# storage account with a private container, CORS for the map and a
-# lifecycle rule. Images stay on ghcr.io: an Azure Container Registry costs
-# money every day, even unused (session 3).
+# storage account with a private container, Cross-Origin Resource Sharing (CORS)
+# for the map and a lifecycle rule. Images stay on ghcr.io: an Azure Container
+# Registry costs money every day, even unused (session 3).
 resource "azurerm_storage_account" "data" {
   name                            = substr(replace("${local.name}${var.suffix}t08", "-", ""), 0, 24)
   resource_group_name             = azurerm_resource_group.main.name

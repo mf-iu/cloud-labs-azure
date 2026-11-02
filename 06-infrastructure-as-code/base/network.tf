@@ -1,4 +1,5 @@
-# The network design of session 4 (04-network/create-vnet.sh): VNet
+# The network design of session 4 (04-network/create-vnet.sh): Virtual Network
+# (VNet)
 # 10.20.0.0/16 with an application and a database subnet. Both are delegated
 # to the service that runs in them; the public entry point is the load
 # balancer of the Container Apps environment, so no public subnet is needed.
@@ -35,7 +36,8 @@ resource "azurerm_virtual_network" "main" {
 
 # The Container Apps environment needs a subnet of its own (at least /27).
 # Outbound access stays on: the replicas pull the image from ghcr.io. In
-# production, a NAT gateway would take over (about 1 EUR per day).
+# production, a Network Address Translation (NAT) gateway would take over (about
+# 1 EUR per day).
 resource "azurerm_subnet" "app" {
   name                            = "app"
   resource_group_name             = azurerm_resource_group.main.name

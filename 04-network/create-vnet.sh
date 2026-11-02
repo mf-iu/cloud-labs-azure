@@ -9,7 +9,8 @@
 #   --with-vm   two test VMs: a bastion in the public subnet (SSH from your IP
 #               only) and a VM without public address in the application
 #               subnet (SSH only from the public subnet); check with ./check-vpc.sh
-#   --with-nat  NAT gateway for the application subnet (about 1 EUR per day!)
+#   --with-nat  Network Address Translation (NAT) gateway for the application
+#               subnet (about 1 EUR per day!)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-# Create a read-only SAS URL (valid for one hour) and test it: without SAS
-# token, with a range request and with a CORS preflight of the map. For a
-# PMTiles file, also print the address of the map with these tiles.
+# Create a read-only Shared Access Signature (SAS) URL (valid for one hour) and
+# test it: without SAS token, with a range request and with a Cross-Origin
+# Resource Sharing (CORS) preflight of the map. For a PMTiles file, also print
+# the address of the map with these tiles.
 #
 # Usage: ./sas.sh [name]   (default: raw/geonames/cities15000.txt)
 

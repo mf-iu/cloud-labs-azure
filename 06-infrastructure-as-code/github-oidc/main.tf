@@ -1,5 +1,6 @@
-# Keyless deployment from GitHub Actions: the workflow exchanges its OIDC
-# token for an Entra ID token of the managed identity below (no secrets).
+# Keyless deployment from GitHub Actions: the workflow exchanges its OpenID
+# Connect (OIDC) token for an Entra ID token of the managed identity below (no
+# secrets).
 # Run 06-infrastructure-as-code/base first; the identity may change only
 # its resource group, where service creates the container app as well.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Create a storage account with a private blob container, CORS for map
-# tiles and a lifecycle rule.
+# Create a storage account with a private blob container, Cross-Origin Resource
+# Sharing (CORS) for map tiles and a lifecycle rule.
 #
 # Usage: ./create-storage.sh
 

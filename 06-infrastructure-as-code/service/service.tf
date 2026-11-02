@@ -1,9 +1,9 @@
 # PlaceFinder on Azure Container Apps as in session 3, now in the
-# application subnet of the VNet of base. The environment with the workload profile
-# "Consumption" is billed per use and scales to zero; its public load
-# balancer is the only way in. The CI pipeline of PlaceFinder pushes the
-# images to ghcr.io; the deploy workflow (deploy.example.yml) rolls out new
-# versions.
+# application subnet of the Virtual Network (VNet) of base. The environment with
+# the workload profile "Consumption" is billed per use and scales to zero; its
+# public load balancer is the only way in. The Continuous Integration (CI)
+# pipeline of PlaceFinder pushes the images to ghcr.io; the deploy workflow
+# (deploy.example.yml) rolls out new versions.
 resource "azurerm_container_app_environment" "main" {
   name                               = "${local.name}-t08-env"
   resource_group_name                = local.base.resource_group

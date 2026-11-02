@@ -69,7 +69,8 @@ subnet() {
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# internet <subnet>: NAT gateway, none or default outbound access
+# internet <subnet>: Network Address Translation (NAT) gateway, none or default
+# outbound access
 internet() {
     if [[ -n "$(subnet "$1" natGateway.id)" ]]; then
         echo "NAT gateway"
