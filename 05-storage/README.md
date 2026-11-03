@@ -1,51 +1,28 @@
 # 05 – Object Storage und verwaltete Datenbank
 
-In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von Azure; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS. Die verwaltete PostgreSQL-Datenbank aus Termin 6 ist **Zusatz** – freiwillig und ohne Folgen für spätere Termine; PostGIS lokal steht in [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis).
+In Termin 6 legt dieser Schritt eine verwaltete PostgreSQL-Datenbank mit PostGIS bei Azure an – das ist die **Übung im Termin**. Die Skripte aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis) laden die Orte von GeoNames hinein und prüfen PlaceFinder damit; `with-db.sh` ruft sie mit dieser Datenbank auf. In Termin 7 kommen die Rohdaten von GeoNames und die Kacheldatei aus [cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage) in den privaten Object Storage von Azure; die Karte von PlaceFinder liest ihre Kacheln von dort, mit zeitlich begrenztem Zugriff, Range Requests und CORS.
 
 | Skript | Aufgabe |
 |---|---|
-| `create-storage.sh`, `destroy-storage.sh` | ein Speicherkonto mit privatem Container `data` beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
-| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
-| `sas.sh` | SAS-URL (Shared Access Signature) für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 | `create-db.sh`, `destroy-db.sh` | PostgreSQL 18 beim Anbieter anlegen, nur von der eigenen IP-Adresse erreichbar, und wieder löschen |
 | `backups.sh` | automatische Backups und das Zeitfenster für Point-in-Time Recovery anzeigen; ändert nichts |
 | `with-db.sh` | ein Skript aus `cloud-labs-local/06-postgis` mit dieser Datenbank ausführen, z. B. `./with-db.sh load-cities.sh` |
+| `create-storage.sh`, `destroy-storage.sh` | ein Speicherkonto mit privatem Container `data` beim Anbieter, mit CORS und Lebenszyklusregel; Rohdaten hochladen; alles wieder löschen |
+| `upload.sh` | Datei hochladen: `.pmtiles` nach `tiles/`, alles andere nach `raw/` |
+| `sas.sh` | SAS-URL (Shared Access Signature) für eine Stunde, getestet ohne Signatur, mit Range Request und CORS; für PMTiles die Adresse der Karte |
 
 **Kosten:** Object Storage: Blob Storage (LRS, Hot) gehört in den ersten 12 Monaten mit 5 GB zu den kostenlosen Diensten; danach ca. 0,02 USD je GB und Monat. Datenbank: `Standard_B1ms` mit 32 GB Speicher gehört in den ersten 12 Monaten zu den kostenlosen Diensten (750 Stunden im Monat). Nach der Übung trotzdem löschen oder anhalten (`az postgres flexible-server stop`, nach sieben Tagen startet Azure den Server automatisch wieder).
 
-## Object Storage mit Kacheln (Termin 7)
+## Im Termin: verwaltete Datenbank (Termin 6)
 
-Voraussetzung ist die Kacheldatei `erfurt.pmtiles` aus `cloud-labs-local/07-cache-and-storage/make-tiles.sh`; sie liegt in `cloud-labs-local/.state/data/`.
-
-```bash
-cd /workspaces/cloud-labs-azure/05-storage
-./create-storage.sh                                            # Speicherkonto, Container data, CORS, Lebenszyklus, cities15000
-./upload.sh ../../cloud-labs-local/.state/data/erfurt.pmtiles  # nach tiles/
-./sas.sh tiles/erfurt.pmtiles                                  # Tests und Adresse der Karte
-./sas.sh                                                       # dasselbe für die Rohdaten in raw/geonames/
-./destroy-storage.sh                                           # danach alles löschen
-```
-
-Die Adresse der Karte, die `sas.sh` ausgibt, im Browser öffnen, während PlaceFinder und der Webserver für `frontend/` laufen ([cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage)). Die Karte lädt dann ihre Kacheln direkt aus dem Object Storage des Anbieters – ohne eigenen Server dafür.
-
-**Was die Skripte einstellen:**
-
-- Speicherkonto `Standard_LRS` (drei Kopien in einem Rechenzentrum), mindestens TLS 1.2, keine öffentlichen Blobs. Daten im Ruhezustand sind immer verschlüsselt.
-- CORS: GET und HEAD von `http://localhost:5173`, Header `Range` erlaubt, `ETag`, `Content-Length` und `Content-Range` für den Browser sichtbar.
-- `lifecycle.json`: Blobs unter `data/raw/` werden 30 Tage nach der letzten Änderung gelöscht.
-- Die Datenbefehle und die SAS melden sich mit dem Kontoschlüssel an (`AZURE_STORAGE_KEY`). Besser ist die Anmeldung mit Entra ID und der Rolle *Storage Blob Data Contributor*; so arbeiten die Termine 9–11. Eine SAS lässt sich dann als *User Delegation SAS* ohne Kontoschlüssel ausstellen.
-
-**Prüfen:** Die Ausgabe von `sas.sh` zeigt ohne Signatur ein Fehler (`409 PublicAccessNotPermitted` oder `404`) – das Objekt ist privat –, mit Signatur und `Range: bytes=0-99` die Antwort `206 Partial Content` mit `Content-Range` und bei der Preflight-Anfrage `Access-Control-Allow-Origin: http://localhost:5173`.
-
-## Zusatz: verwaltete Datenbank (Termin 6)
-
-Freiwillig und ohne Folgen für spätere Termine; die Übung von Termin 6 ist rein lokal ([cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis)). Pflicht wird die verwaltete Datenbank in Termin 8 – dann im privaten Netz, angelegt mit OpenTofu in `06-infrastructure-as-code/service`. Die Instanz wird stündlich abgerechnet; der Ablauf dauert mit Anlegen und Löschen rund 30 Minuten.
+Übung im Termin, rund 60 Minuten zusammen mit dem lokalen Vergleich aus [cloud-labs-local/06-postgis](https://github.com/mf-iu/cloud-labs-local/tree/master/06-postgis). `create-db.sh` kurz vor der Pause starten – das Anlegen dauert etwa 10 Minuten und läuft währenddessen. Die Instanz wird stündlich abgerechnet: am Ende löschen, das gehört zur Übung. Der Foliensatz `T06_Lab-Skripte` erklärt die Skripte.
 
 ```bash
 cd /workspaces/cloud-labs-azure/05-storage
 ./create-db.sh               # Server mit Firewall-Regel für die eigene IP, ca. 5-10 min
 ./with-db.sh load-cities.sh  # dieselben Daten, jetzt über das Internet
 ./with-db.sh query.sh        # Zeiten mit der lokalen Datenbank vergleichen
+./with-db.sh query.sh --interactive   # SHOW max_connections;
 ./with-db.sh test-api.sh     # PlaceFinder lokal, die Daten aus der Cloud
 ./backups.sh                 # Backups und Point-in-Time Recovery
 ./destroy-db.sh              # danach löschen – gehört dazu
@@ -70,6 +47,30 @@ uv run fastapi dev src/placefinder/main.py                # meldet: Using PostGI
 **Backups:** Der Flexible Server sichert täglich einen Snapshot und archiviert das WAL alle fünf Minuten; die Backups bleiben sieben Tage (Standard). `backups.sh` zeigt Einstellungen, Backups und den frühesten Zeitpunkt für Point-in-Time Recovery. Eine Wiederherstellung legt einen **neuen Server** an (`az postgres flexible-server restore`); das Skript zeigt den Befehl nur.
 
 Im Portal: *Monitoring* → *Metrics*, *Settings* → *Backup and restore* (automatische Backups, Wiederherstellung auf einen Zeitpunkt).
+
+## Object Storage mit Kacheln (Termin 7)
+
+Voraussetzung ist die Kacheldatei `erfurt.pmtiles` aus `cloud-labs-local/07-cache-and-storage/make-tiles.sh`; sie liegt in `cloud-labs-local/.state/data/`.
+
+```bash
+cd /workspaces/cloud-labs-azure/05-storage
+./create-storage.sh                                            # Speicherkonto, Container data, CORS, Lebenszyklus, cities15000
+./upload.sh ../../cloud-labs-local/.state/data/erfurt.pmtiles  # nach tiles/
+./sas.sh tiles/erfurt.pmtiles                                  # Tests und Adresse der Karte
+./sas.sh                                                       # dasselbe für die Rohdaten in raw/geonames/
+./destroy-storage.sh                                           # danach alles löschen
+```
+
+Die Adresse der Karte, die `sas.sh` ausgibt, im Browser öffnen, während PlaceFinder und der Webserver für `frontend/` laufen ([cloud-labs-local/07-cache-and-storage](https://github.com/mf-iu/cloud-labs-local/tree/master/07-cache-and-storage)). Die Karte lädt dann ihre Kacheln direkt aus dem Object Storage des Anbieters – ohne eigenen Server dafür.
+
+**Was die Skripte einstellen:**
+
+- Speicherkonto `Standard_LRS` (drei Kopien in einem Rechenzentrum), mindestens TLS 1.2, keine öffentlichen Blobs. Daten im Ruhezustand sind immer verschlüsselt.
+- CORS: GET und HEAD von `http://localhost:5173`, Header `Range` erlaubt, `ETag`, `Content-Length` und `Content-Range` für den Browser sichtbar.
+- `lifecycle.json`: Blobs unter `data/raw/` werden 30 Tage nach der letzten Änderung gelöscht.
+- Die Datenbefehle und die SAS melden sich mit dem Kontoschlüssel an (`AZURE_STORAGE_KEY`). Besser ist die Anmeldung mit Entra ID und der Rolle *Storage Blob Data Contributor*; so arbeiten die Termine 9–11. Eine SAS lässt sich dann als *User Delegation SAS* ohne Kontoschlüssel ausstellen.
+
+**Prüfen:** Die Ausgabe von `sas.sh` zeigt ohne Signatur ein Fehler (`409 PublicAccessNotPermitted` oder `404`) – das Objekt ist privat –, mit Signatur und `Range: bytes=0-99` die Antwort `206 Partial Content` mit `Content-Range` und bei der Preflight-Anfrage `Access-Control-Allow-Origin: http://localhost:5173`.
 
 ## Typische Probleme
 
