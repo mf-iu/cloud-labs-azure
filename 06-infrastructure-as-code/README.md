@@ -1,6 +1,6 @@
 # 06 – Infrastruktur als Code: base und service
 
-**Ziel:** Die Infrastruktur der Zwischenpräsentation entsteht beim neuen Anbieter reproduzierbar aus OpenTofu-Code mit Remote State – in zwei Teilen:
+**Ziel:** Die Infrastruktur der Termine 3 bis 7 entsteht beim neuen Anbieter reproduzierbar aus OpenTofu-Code mit Remote State – in zwei Teilen:
 
 - **`base`** – Ressourcengruppe, VNet aus Termin 4, Speicherkonto aus Termin 7. Entsteht einmal in Termin 8 und bleibt bis zum Kursende; kostet praktisch nichts.
 - **`service`** – Container-Apps-Umgebung mit PlaceFinder, optional PostgreSQL Flexible Server. Liest die Ausgaben von `base` und wird im Termin angelegt und wieder gelöscht.
